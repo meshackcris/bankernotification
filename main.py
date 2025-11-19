@@ -125,7 +125,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     intro = [
         "Hi! I relay announcements to every chat that subscribed via /subscribe.",
         "Use /subscribe or /unsubscribe inside a group/channel where I'm an admin.",
-        "Send any non-command message here in a private chat to broadcast it everywhere.",
+        "Send any  non-command message here in a private chat to broadcast it everywhere.",
     ]
     allowed_users: Set[int] = context.bot_data.get("allowed_user_ids", set())
     if allowed_users:
