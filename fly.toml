@@ -1,0 +1,16 @@
+app = "bankernotification"
+primary_region = "cdg"
+
+[build]
+
+[env]
+
+# NO PORT
+# NO builder
+# NO http_service
+
+# Machine settings
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory = "1gb"
