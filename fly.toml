@@ -5,11 +5,6 @@ primary_region = "cdg"
 
 [env]
 
-# NO PORT
-# NO builder
-# NO http_service
-
-# Machine settings
 [[vm]]
 cpu_kind = "shared"
 cpus = 1
