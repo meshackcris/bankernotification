@@ -32,44 +32,6 @@ LOGGER = logging.getLogger(__name__)
 
 load_dotenv()
 
-CAS_ORION_MESSAGE = """🚨🚨🚨
-
-🚀New Payment Solution for Canada!🇨🇦
-
-
-☄️Meet Orion-Pay. 🪐
-
-
-We’re excited to introduce a new payment solution for our Canadian clients, offering fast, secure, and efficient transactions!
-
-
-Payment Methods & Limits:
-💰 Interac e-Transfer: $250 – $25K per day.
-💳 EFT: $10K – $100K per transaction
-📑 Bill Payments: 1k-100k per transaction
-🖥️ Wires: 250$-150k per transaction.
-
-👤 Age Limit: 85 years (can be increased upon request)
-
-
-‼️ Interac deposits up to $1,000 can be made without KYC verification.
-
-
-Interac e-Transfer Options:
-✅ Interac Manual Transfer
-✅ Interac Request-Based Transfer
-✅ Interac Pull (B2C for test withdrawals for the clients)
-
-
-Risk Periods & Charge-Back Policy:
-▶️ Interac e-Transfer: 1-month risk period (Chargebacks must be reimbursed)
-▶️ EFT: 3-month risk period (Chargebacks must be reimbursed)
-▶️ Wire: 61 days risk period (Chargebacks must be reimbursed)
-▶️Bill Payments: 61 days risk period (Chargebacks must be reimbursed)
-
-
-We are working with Verified brands and upon references."""
-
 class SubscriptionStore:
     """Thread-safe JSON-backed storage for target chat IDs."""
 
@@ -166,44 +128,10 @@ def ensure_store(context: ContextTypes.DEFAULT_TYPE) -> SubscriptionStore:
     return store
 
 
-async def ca_solution_orion_handler(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
-    message = update.effective_message
-    if message is None:
-        return
-
-    photo_file = None
-    photo_arg: Optional[object] = os.environ.get("ORION_PHOTO_URL")
-    candidate_paths = []
-    env_path = os.environ.get("ORION_PHOTO_PATH")
-    if env_path:
-        candidate_paths.append(Path(env_path))
-    candidate_paths.append(Path("data/orion_pay.jpg"))
-
-    for path in candidate_paths:
-        if path.is_file():
-            photo_file = path.open("rb")
-            photo_arg = photo_file
-            break
-
-    if photo_arg is None:
-        await message.reply_text(
-            "Orion image not configured. Add data/orion_pay.jpg or set ORION_PHOTO_PATH/ORION_PHOTO_URL."
-        )
-        return
-
-    try:
-        await message.reply_photo(photo=photo_arg, caption=CAS_ORION_MESSAGE)
-    finally:
-        if photo_file:
-            photo_file.close()
-
-
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_type = update.effective_chat.type if update.effective_chat else "private"
     intro = [
-        "Hi! I relay announcements to every chat that subscribed via /subscribe.",
+        "Hi! I relay announcements to every chat that subscribed via /subscribe. ",
         "Use /subscribe or /unsubscribe inside a group/channel where I'm an admin.",
         "Send any  non-command message here in a private chat to broadcast it everywhere.",
     ]
@@ -327,7 +255,6 @@ async def configure_bot_commands(application: Application) -> None:
         [
             BotCommand("start", "Show help and usage"),
             BotCommand("list", "List subscribed chats"),
-            BotCommand("casolutionorion", "Canada Orion-Pay details"),
         ],
         scope=BotCommandScopeAllPrivateChats(),
     )
@@ -349,9 +276,6 @@ def build_application(token: str, store: SubscriptionStore, allowed_users: Set[i
     application.bot_data["allowed_user_ids"] = allowed_users
 
     application.add_handler(CommandHandler("start", start_handler))
-    application.add_handler(
-        CommandHandler("casolutionorion", ca_solution_orion_handler)
-    )
     application.add_handler(
         CommandHandler(
             "subscribe",
