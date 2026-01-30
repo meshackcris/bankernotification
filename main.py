@@ -19,6 +19,7 @@ from telegram.error import Forbidden, TelegramError
 from telegram.ext import (
     Application,
     ApplicationBuilder,
+    ChatMemberHandler,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -195,6 +196,11 @@ async def list_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     message = update.effective_message
     if message is None:
         return
+    allowed_users: Set[int] = context.bot_data.get("allowed_user_ids", set())
+    user = update.effective_user
+    if allowed_users and (user is None or user.id not in allowed_users):
+        await message.reply_text("You're not allowed to view the subscription list.")
+        return
     store = ensure_store(context)
     chats = store.list_chats()
     if not chats:
@@ -248,6 +254,28 @@ async def broadcast_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     await message.reply_text("\n".join(summary))
 
 
+async def auto_subscribe_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Auto-subscribe chats when the bot is added; auto-remove when the bot is removed."""
+    chat = update.effective_chat
+    member_update = update.my_chat_member
+    if chat is None or member_update is None:
+        return
+    if chat.type == ChatType.PRIVATE:
+        return
+
+    old_status = member_update.old_chat_member.status
+    new_status = member_update.new_chat_member.status
+    store = ensure_store(context)
+
+    joined = new_status in {ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR}
+    left = new_status in {ChatMemberStatus.LEFT, ChatMemberStatus.KICKED}
+
+    if joined and old_status in {ChatMemberStatus.LEFT, ChatMemberStatus.KICKED}:
+        store.add_chat(chat)
+    elif left:
+        store.remove_chat(chat.id)
+
+
 async def configure_bot_commands(application: Application) -> None:
     """Limit command visibility so only admins see subscription actions."""
     bot = application.bot
@@ -298,6 +326,7 @@ def build_application(token: str, store: SubscriptionStore, allowed_users: Set[i
             filters.ChatType.PRIVATE & ~filters.COMMAND, broadcast_handler
         )
     )
+    application.add_handler(ChatMemberHandler(auto_subscribe_handler, ChatMemberHandler.MY_CHAT_MEMBER))
     return application
 
 
